@@ -37,3 +37,25 @@ ggplot(data = fanta_stat, mapping =
              color = R)) + 
   geom_point() + 
   facet_wrap(~Squadra, nrow = 4)
+
+#Barplot of observations by positions
+ggplot(data = fanta_stat) + 
+  geom_bar(mapping=aes(x = R))
+
+#Barplot of FantaMedia by positions
+ggplot(data = fanta_stat, mapping =
+         aes(x = R, y = Mf,
+             fill = R)) +
+  geom_bar(stat = "identity")
+
+
+#Coxcomb chart of FantaMedia by positions
+ggplot(data = fanta_stat, mapping =
+         aes(x = R, y = Mf,
+             fill = R)) +
+  geom_bar(stat = "identity", width = 1) + 
+  coord_polar()
+
+#It seems that defenders make the greatest contribution to the score, followed by midfielders,
+#forwards and goalkeepers. The result could be related to the number of observations by positions
+#and to the formations, which usually make use of more defenders and midfielders in the 11th.
