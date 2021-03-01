@@ -1,0 +1,214 @@
+---
+title: "Approach to fantasy football and supporters network"
+subtitle: "Data Access & Regulation - Module II | DAPS&CO - Università degli Studi di Milano"
+author: "Simone De Luca"
+date: "01/03/2021"
+output: html_document 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, results = 'hide', fig.align = 'center')
+```
+<style>
+body {
+text-align: justify}
+</style>
+
+## Introduction
+
+The following is not a project, but a set of ideas to develop. My intention was to look at the world of football, which is not a field of interest for 'sport analytics' only, but for sociology, politics and economics too.
+
+My work focused mainly on two questions, which are not directly correlated:
+ 
+1. the stats of players and teams of Serie A, the first Italian league (on-field performance);
+2. the community of supporters and their system of beliefs (off-field creation of meanings).
+
+For the stats of Serie A, I relied on Fantacalcio, the fantasy game of the league. I was facilitated by the availability of excel documents, to which some scraping was added for a descriptive analysis of the results.
+
+For the community of supporters, I explored the use of InstaCrawlR to gather Instagram data following specific keywords in order to create a network analysis of related hashtags in Gephi.
+
+Here, a series of problems have emerged with the functionality of the tool.
+
+The difficulties encountered in the execution of the project...
+
+### Libraries
+```{r libraries}
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(rvest)
+library(kableExtra)
+
+#packages needed for InstaCrawlR in the link
+#packages used in 03_AttentatoCongo in the script
+```
+
+## Fantacalcio
+
+From the official site of the game, I could directly download the excel files of the player stats and their ratings, regularly updated after each match day. This data refer to the first half of the season.
+I had to make some cleaning operations.
+
+```{r stats}
+setwd("/Users/pc/Desktop/Data access/Capstone-Simone")
+
+url <- "https://www.fantacalcio.it/"
+
+fanta_stat <- read_excel("Data/Statistiche_Fantacalcio_2020-21.xlsx")
+fanta_ratings <- read_excel("Data/Quotazioni_Fantacalcio.xlsx")
+
+head(fanta_stat)
+
+#Convert row to column names
+colnames(fanta_stat) <- as.character(fanta_stat[1, ])
+fanta_stat <- fanta_stat[-1,]
+
+fanta_stat <- as.data.frame(fanta_stat)
+str(fanta_stat)
+
+colnames(fanta_ratings) <- as.character(fanta_ratings[1, ])
+fanta_ratings <- fanta_ratings[-1,]
+
+fanta_ratings <- as.data.frame(fanta_ratings)
+str(fanta_stat)
+
+#Convert data frame column to numeric type
+fanta_stat[, c(1,5:18)] <- sapply(fanta_stat[, c(1,5:18)], as.numeric)
+
+fanta_ratings[, c(1,5:7)] <- sapply(fanta_ratings[, c(1,5:7)], as.numeric)
+```
+
+### Some descriptive plots
+
+FantaMedia by appearances
+
+```{r plot1, echo=FALSE}
+ggplot(data = fanta_stat, mapping =
+        aes(x = Pg, y = Mf)) +
+  geom_point() +
+  labs(x = "Appearances", y = "FantaMedia")
+```
+
+FantaMedia by player position - P (Goalkeeper) D (Defender) C (Midfielder) A (Forward)
+
+```{r plot2, echo=FALSE}
+ggplot(data = fanta_stat, mapping =
+         aes(x = Pg, y = Mf,
+             color = R, shape = R)) +
+  geom_point() +
+  geom_smooth() +
+  labs(x = "Appearances", y = "FantaMedia")
+# + facet_grid(R~.) #separated
+```
+
+FantaMedia by player position for each team - P (Goalkeeper) D (Defender) C (Midfielder) A (Forward)
+
+```{r plot3, echo=FALSE}
+ggplot(data = fanta_stat, mapping =
+         aes(x = Pg, y = Mf,
+             color = R)) + 
+  geom_point() + 
+  facet_wrap(~Squadra, nrow = 4) +
+  labs(x = "Appearances", y = "FantaMedia")
+```
+
+Barplot of observations by positions - P (Goalkeeper) D (Defender) C (Midfielder) A (Forward)
+
+```{r plot4, echo=FALSE}
+ggplot(data = fanta_stat) + 
+  geom_bar(mapping=aes(x = R)) +
+  labs(x = "Positions", y = "obs")
+```
+
+Barplot of FantaMedia by positions - P (Goalkeeper) D (Defender) C (Midfielder) A (Forward)
+
+```{r plot5, echo=FALSE}
+ggplot(data = fanta_stat, mapping =
+         aes(x = R, y = Mf,
+             fill = R)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Positions", y = "FantaMedia")
+```
+
+Coxcomb chart of FantaMedia by positions - P (Goalkeeper) D (Defender) C (Midfielder) A (Forward)
+
+```{r plot6, echo=FALSE}
+ggplot(data = fanta_stat, mapping =
+         aes(x = R, y = Mf,
+             fill = R)) +
+  geom_bar(stat = "identity", width = 1) + 
+  coord_polar() +
+  labs(x = "Positions", y = "FantaMedia")
+```
+
+It seems that defenders are the category that make more points, followed by midfielders, forwards and goalkeepers. The result could be related to the number of observations by positions or to the starting line-up, which usually see more defenders and midfielders in the initial 11th.
+
+### Tables
+
+I thought that was useful collecting info about the development of the season. So, I decided to scrape the tables of the league, using the `rvest` package.
+
+```{r tables, echo=TRUE}
+standing <- read_html("https://www.fantacalcio.it/serie-a/classifica") %>%
+  html_nodes(css = 'table') %>%
+  html_table() %>%
+  .[[1]]
+
+home_table <- read_html("https://www.fantacalcio.it/serie-a/classifica") %>%
+  html_nodes(css = 'table') %>%
+  html_table() %>%
+  .[[2]]
+
+away_table <- read_html("https://www.fantacalcio.it/serie-a/classifica") %>%
+  html_nodes(css = 'table') %>%
+  html_table() %>%
+  .[[3]]
+
+top_scorers <- read_html("https://www.fantacalcio.it/serie-a/classifica") %>%
+  html_nodes(css = 'table') %>%
+  html_table() %>%
+  .[[4]]
+```
+
+This would be the starting point for the analysis. It would be interesting building a predicting model that takes into account the last performances of the players to suggest the optimal starting line-up in comparison with the characteristics of the opponent.
+
+## Supporters network
+
+The idea was to investigate the system of beliefs of the supporters, trying to intercept the social and political issues at the center of their debate. The real interest here was on the world of *ultras*, a very specific galaxy of the universe of supporters. In particular, I was focused on the political affiliations of the different ultras groups and on their relationships.
+
+### Twinning table
+
+The table scraped with this code shows the international twinnings between some Italian and foreign groups, reinforced by the political affiliation.
+
+```{r twinnings, echo=FALSE, results=TRUE}
+intern_twin <- read_html("https://inchieste.repubblica.it/it/repubblica/rep-it/2014/03/20/news/calcio_la_tifoseria_degli_ultras-81427305/") %>%                           
+  html_node(xpath = '//*[@id="verticale"]/div[1]/table') %>%        
+  html_table(fill = TRUE)
+
+intern_twin %>%
+  kbl() %>%
+  kable_styling()
+```
+
+It would be interesting to verify whether there is a correlation between the political affiliation of the ultras and the political orientation of the cities the football clubs represent.
+
+### InstaCrawlR
+
+Then, I moved to social networks in order to parse data related to specific hashtags naming the ultras group. I followed the guide of InstaCrawlR (https://github.com/JonasSchroeder/InstaCrawlR), a tool made of four scripts which is able to collect data from Instagram without API access token.
+
+My intention was to export the lists of related hashtags used by different ultras groups in the same Gephi space to visualize the contact points and differences.
+
+The first attempt worked out. After few and simple adaptations of the code, I obtained the network of the related hashtags of #ultrasliberi.
+
+![](/Users/pc/Desktop/Data access/Capstone-Simone/Figs/ultrasliberi.png)
+
+
+After, a series of errors stopped me from my goal, so far. In the first place, also my colleague Tomas Ruzza managed to get the .gexf file for #drughi. Here the visualization.
+
+![](/Users/pc/Desktop/Data access/Capstone-Simone/Figs/drughi.png)
+
+He also managed to get different dataframes: #fedayn, #irriducibili, #barrasbravas, but the forth script (g2gephi.R) stopped to work. Also, Fedra Ippolito tried to run the code, without success. Thank you to them!
+
+Finally, I explored the functions of the sentiment analysis in order to have a picture of the potential of the text analytics (03_AttentatoCongo).
+
+## Conclusion
+
+This project is a starting point. For the first time, I had to deal with R in a creative task, exploring functionalities, possibilities and different way of thinking. I had fan, then got stack, then got curious again. I am aware of the limits of the work but I am confident about the future. The energy of the community is chaos for the observers, it's drums for the members.
