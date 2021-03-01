@@ -205,7 +205,7 @@ After, a series of errors stopped me from my goal, so far. In the first place, a
 
 ![](/Users/pc/Desktop/Data access/Capstone-Simone/Figs/drughi.png)
 
-He also managed to get different dataframes: #fedayn, #irriducibili, #barrasbravas, but the forth script (g2gephi.R) stopped to work. Also, Fedra Ippolito tried to run the code, without success. Thank you to them!
+He also managed to get different dataframes: #fedayn, #irriducibili, #barrasbravas, but the forth script (g2gephi.R) stopped to work. Also, Fedra Ippolito tried to run the code, without success. Thanks to them!
 
 Finally, I explored the functions of the sentiment analysis in order to have a picture of the potential of the text analytics (03_AttentatoCongo).
 
