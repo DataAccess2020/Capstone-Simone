@@ -4,6 +4,9 @@ More than an organic project, it's a set of ideas to develop. The common thread 
 The files are organized as following:
 
 Data folder <- contain the data used in the analysis
+
 Figs folder <- contain the figures used in the report
+
 Report folder <- contain the markdown and the html file
+
 Scripts <- contain the scripts ordered numerically
